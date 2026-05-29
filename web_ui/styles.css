@@ -1,0 +1,264 @@
+:root {
+    --bg-color: #0b0f19;
+    --panel-bg: rgba(20, 25, 40, 0.6);
+    --primary-color: #00e5ff;
+    --text-main: #ffffff;
+    --text-muted: #8b9bb4;
+    --glass-border: rgba(0, 229, 255, 0.15);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: 'Roboto', sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background-image: 
+        linear-gradient(rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 229, 255, 0.05) 1px, transparent 1px),
+        radial-gradient(circle at center, #1a2235 0%, var(--bg-color) 100%);
+    background-size: 50px 50px, 50px 50px, 100% 100%;
+    animation: gridMove 20s linear infinite;
+}
+
+/* Custom Cyberpunk Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #00ffaa;
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--glass-border);
+}
+
+h1 {
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 4px;
+    color: var(--primary-color);
+    text-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.connected { color: #00ff88; }
+.disconnected { color: #ff3366; }
+
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 30px;
+    padding: 40px 0;
+}
+
+/* ORB / VISUALIZER */
+.orb-container {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 300px;
+    position: relative;
+}
+
+.orb {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #ffffff 0%, var(--primary-color) 40%, transparent 80%);
+    box-shadow: 0 0 50px var(--primary-color), inset 0 0 20px #fff;
+    z-index: 10;
+    transition: all 0.2s ease;
+}
+
+.orb.active {
+    transform: scale(1.2);
+    box-shadow: 0 0 80px var(--primary-color), inset 0 0 30px #fff;
+    animation: pulse 1s infinite alternate;
+}
+
+.orb.listening {
+    animation: fluctuate 0.15s infinite alternate;
+    box-shadow: 0 0 120px var(--primary-color), inset 0 0 50px #fff;
+    background: radial-gradient(circle at center, #ffffff 0%, #00ffcc 60%, transparent 80%);
+}
+
+.rings {
+    position: absolute;
+    width: 300px;
+    height: 300px;
+}
+
+.ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid rgba(0, 229, 255, 0.3);
+}
+
+.ring-1 { width: 150px; height: 150px; animation: spin 10s linear infinite; border-top: 2px solid var(--primary-color); }
+.ring-2 { width: 200px; height: 200px; animation: spin 15s linear infinite reverse; border-right: 2px solid var(--primary-color); }
+.ring-3 { width: 250px; height: 250px; animation: spin 20s linear infinite; border-bottom: 2px solid var(--primary-color); }
+
+/* PANELS */
+.transcription-box, .action-log-box {
+    background: var(--panel-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 25px;
+    backdrop-filter: blur(10px);
+    display: flex;
+    flex-direction: column;
+}
+
+h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+#voice-text {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    font-style: italic;
+    flex: 1;
+    display: flex;
+    align-items: center;
+}
+
+#action-log {
+    list-style: none;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#action-log li {
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-left: 3px solid var(--primary-color);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.command-box {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 15px;
+    background: var(--panel-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 15px;
+    padding: 15px;
+    backdrop-filter: blur(10px);
+}
+
+#command-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--glass-border);
+    color: var(--text-main);
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-family: 'Roboto', sans-serif;
+}
+
+#command-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.3);
+}
+
+#send-btn {
+    background: var(--primary-color);
+    color: #000;
+    border: none;
+    padding: 0 30px;
+    border-radius: 8px;
+    font-family: 'Orbitron', sans-serif;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#send-btn:hover {
+    background: #00ffaa;
+    transform: scale(1.05);
+}
+
+/* ANIMATIONS */
+@keyframes spin {
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1.1); box-shadow: 0 0 40px var(--primary-color); }
+    100% { transform: scale(1.3); box-shadow: 0 0 100px var(--primary-color); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fluctuate {
+    0% { transform: scale(1.0); box-shadow: 0 0 40px var(--primary-color); }
+    100% { transform: scale(1.3); box-shadow: 0 0 150px var(--primary-color); }
+}
+
+@keyframes gridMove {
+    from { background-position: 0 0, 0 0, center; }
+    to { background-position: 50px 50px, 50px 50px, center; }
+}
