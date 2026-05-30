@@ -121,7 +121,7 @@ def collect_and_compile(topic):
     try:
         with open(filepath, 'w', encoding='utf-8') as f:
             f.write(report_content)
-        return filename, filepath, wiki_summary[:150] + "..."
+        return filename, filepath, wiki_summary, wiki_url
     except Exception as e:
         raise IOError(f"Could not save intelligence report to disk: {e}")
 
@@ -134,11 +134,12 @@ def process_command(cmd):
             return "No topic provided for data collection, sir."
             
         try:
-            filename, filepath, summary_snippet = collect_and_compile(topic)
+            filename, filepath, wiki_summary, wiki_url = collect_and_compile(topic)
             return (
-                f"Sir, I have gathered comprehensive intelligence on '{topic}' from Wikipedia and live search databases. "
-                f"The report has been compiled and saved to '{filename}' inside your documents directory. "
-                f"Brief overview: {summary_snippet}"
+                f"Sir, I have gathered comprehensive intelligence on '{topic}'. "
+                f"The report has been compiled and saved as '{filename}' inside your documents directory. "
+                f"Wikipedia Source: {wiki_url}. "
+                f"Wikipedia Summary: {wiki_summary}"
             )
         except Exception as e:
             return f"I encountered an error compiling the data, sir: {str(e)}"
