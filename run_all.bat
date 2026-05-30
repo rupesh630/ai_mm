@@ -8,6 +8,9 @@ start cmd /k ".\venv\Scripts\activate.bat && echo Starting Gesture Agent... && p
 start cmd /k ".\venv\Scripts\activate.bat && echo Starting Database Agent... && python db_agent.py"
 start cmd /k ".\venv\Scripts\activate.bat && echo Starting System Agent... && python sys_agent.py"
 start cmd /k ".\venv\Scripts\activate.bat && echo Starting Web Agent... && python web_agent.py"
+start cmd /k ".\venv\Scripts\activate.bat && echo Starting Wikipedia Agent... && python wiki_agent.py"
+start cmd /k ".\venv\Scripts\activate.bat && echo Starting Learning Agent... && python learning_agent.py"
+start cmd /k ".\venv\Scripts\activate.bat && echo Starting Data Collection Agent... && python data_agent.py"
 start cmd /k ".\venv\Scripts\activate.bat && echo Starting Orchestrator... && python orchestrator.py"
 
 echo Waiting for backend to spin up...

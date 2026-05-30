@@ -5,7 +5,6 @@ import websockets
 import threading
 import os
 import random
-import wikipedia
 from dotenv import load_dotenv
 
 # Load local environment variables for the true AI brain
@@ -40,6 +39,22 @@ def parse_voice_command(text):
     target = None
     content = ""
     
+    # Cognitive / Learning Actions
+    if any(phrase in text for phrase in ["learn that", "remember that", "teach me that", "learn "]):
+        return "learn", None, text
+        
+    # Data Collection Actions
+    if any(phrase in text for phrase in ["show collect data", "show collected data", "list collected data", "show research reports"]):
+        return "show_collected", None, ""
+        
+    if any(phrase in text for phrase in ["collect data on ", "collect data about ", "gather data on ", "gather data about "]):
+        import re
+        topic = re.sub(r'collect data on|collect data about|gather data on|gather data about', '', text).strip()
+        topic = re.sub(r'[^\w\s]', '', topic).strip()
+        return "collect", None, topic
+    elif "collect data" in text or "gather data" in text:
+        return "collect", None, "general"
+        
     # System Actions
     if "battery" in text:
         return "sys", "battery", ""
@@ -97,11 +112,12 @@ def parse_voice_command(text):
         content = "I am J.A.R.V.I.S., a multi-agent artificial intelligence. I manage documents, control your operating system hardware, navigate the web, and answer your questions via LLM databases. I am fully at your disposal, sir."
         return action, None, content
     
-    is_question = any(q in text for q in ["what is", "who is", "tell me about", "where is", "how do you", "explain", "why is", "when did"])
+    is_question = any(q in text for q in ["what is", "who is", "tell me about", "where is", "how do you", "explain", "why is", "when did", "what does"])
     if is_question and not any(w in words for w in ["create", "make", "delete", "remove", "open", "edit", "launch", "start"]):
         action = "question"
         import re
-        query = re.sub(r'what is|who is|tell me about|where is|how do you|explain|why is|when did', '', text).strip()
+        query = re.sub(r'what is|who is|tell me about|where is|how do you|explain|why is|when did|what does', '', text).strip()
+        query = re.sub(r'\bmean\b|\bmeans\b|\bsignify\b', '', query).strip()
         query = re.sub(r'[^\w\s]', '', query).strip() # Strip punctuation like question marks
         return action, None, query
         
@@ -191,6 +207,12 @@ def ask_litellm(text, history):
         If the user wants to perform a WEB action (search, browse), output ONLY a JSON object:
         {"action": "web", "target": "search", "content": "query to search for"}  <-- target is 'search' or 'browse', content is the query or the url.
         
+        If the user wants you to learn or remember a language term, translation, or general fact (e.g. "learn that bonjour means hello", "remember that python is a language"), output ONLY a JSON object:
+        {"action": "learn", "content": "bonjour means hello"}  <-- set action to 'learn', and set content to the full fact statement.
+        
+        If the user wants you to gather or collect comprehensive research data on a topic (e.g. "collect data on machine learning", "gather data about paris"), output ONLY a JSON object:
+        {"action": "collect", "content": "machine learning"}  <-- set action to 'collect', and set content to the exact query topic.
+        
         If the user asks a question or makes small talk, output ONLY a JSON object:
         {"action": "speak", "content": "Your intelligent, polite, Jarvis-style response here."}"""}
     ]
@@ -237,6 +259,15 @@ def run_zmq_loop(loop):
     web_sender = context.socket(zmq.REQ)
     web_sender.connect("tcp://localhost:5559")
     
+    wiki_sender = context.socket(zmq.REQ)
+    wiki_sender.connect("tcp://localhost:5560")
+    
+    learn_sender = context.socket(zmq.REQ)
+    learn_sender.connect("tcp://localhost:5561")
+    
+    data_sender = context.socket(zmq.REQ)
+    data_sender.connect("tcp://localhost:5562")
+    
     print("Orchestrator Brain started on port 5556.")
     active_target = None
 
@@ -266,27 +297,102 @@ def run_zmq_loop(loop):
                 if not action:
                     action, target, content = parse_voice_command(text)
                 
-                if action == "speak":
-                    save_to_db(db_sender, "assistant", content)
+                elif action == "collect":
                     asyncio.run_coroutine_threadsafe(
-                        notify_clients({"type": "action", "text": content}), loop
-                    )
-                elif action == "question":
-                    asyncio.run_coroutine_threadsafe(
-                        notify_clients({"type": "status", "text": "Searching my databases, sir..."}), loop
+                        notify_clients({"type": "status", "text": "Gathering and compiling research intelligence, sir..."}), loop
                     )
                     try:
-                        summary = wikipedia.summary(content, sentences=2)
-                        save_to_db(db_sender, "assistant", summary)
+                        data_sender.send_string(json.dumps({"action": "collect", "topic": content}))
+                        reply = data_sender.recv_string()
+                        save_to_db(db_sender, "assistant", reply)
                         asyncio.run_coroutine_threadsafe(
-                            notify_clients({"type": "action", "text": summary}), loop
+                            notify_clients({"type": "action", "text": reply}), loop
                         )
-                    except Exception:
-                        err_msg = "I am afraid I couldn't find any information on that."
+                    except Exception as e:
+                        err_msg = f"I am afraid I had trouble executing the data collection, sir: {e}"
                         save_to_db(db_sender, "assistant", err_msg)
                         asyncio.run_coroutine_threadsafe(
                             notify_clients({"type": "action", "text": err_msg}), loop
                         )
+                elif action == "show_collected":
+                    asyncio.run_coroutine_threadsafe(
+                        notify_clients({"type": "status", "text": "Listing all compiled intelligence reports, sir..."}), loop
+                    )
+                    try:
+                        data_sender.send_string(json.dumps({"action": "show_collected"}))
+                        reply = data_sender.recv_string()
+                        save_to_db(db_sender, "assistant", reply)
+                        asyncio.run_coroutine_threadsafe(
+                            notify_clients({"type": "action", "text": reply}), loop
+                        )
+                    except Exception as e:
+                        err_msg = f"I am afraid I had trouble listing your reports, sir: {e}"
+                        save_to_db(db_sender, "assistant", err_msg)
+                        asyncio.run_coroutine_threadsafe(
+                            notify_clients({"type": "action", "text": err_msg}), loop
+                        )
+                elif action == "speak":
+                    save_to_db(db_sender, "assistant", content)
+                    asyncio.run_coroutine_threadsafe(
+                        notify_clients({"type": "action", "text": content}), loop
+                    )
+                elif action == "learn":
+                    asyncio.run_coroutine_threadsafe(
+                        notify_clients({"type": "status", "text": "Recording in my cognitive memory..."}), loop
+                    )
+                    try:
+                        learn_sender.send_string(json.dumps({"action": "learn", "text": content}))
+                        reply = learn_sender.recv_string()
+                        save_to_db(db_sender, "assistant", reply)
+                        asyncio.run_coroutine_threadsafe(
+                            notify_clients({"type": "action", "text": reply}), loop
+                        )
+                    except Exception as e:
+                        err_msg = f"I am afraid I had trouble learning that concept, sir: {e}"
+                        save_to_db(db_sender, "assistant", err_msg)
+                        asyncio.run_coroutine_threadsafe(
+                            notify_clients({"type": "action", "text": err_msg}), loop
+                        )
+                elif action == "question":
+                    asyncio.run_coroutine_threadsafe(
+                        notify_clients({"type": "status", "text": "Searching my databases, sir..."}), loop
+                    )
+                    # Check learning agent first!
+                    learned_reply = None
+                    try:
+                        learn_sender.send_string(json.dumps({"action": "lookup", "concept": content}))
+                        lookup_res = json.loads(learn_sender.recv_string())
+                        if lookup_res.get("found"):
+                            association = lookup_res.get("association")
+                            category = lookup_res.get("category", "general")
+                            concept = lookup_res.get("concept", content)
+                            if category == "language":
+                                learned_reply = f"Sir, you taught me that '{concept}' means '{association}'."
+                            else:
+                                learned_reply = f"Sir, my records indicate that '{concept}' is '{association}'."
+                    except Exception as e:
+                        print(f"Error checking learned memory: {e}")
+                        
+                    if learned_reply:
+                        save_to_db(db_sender, "assistant", learned_reply)
+                        asyncio.run_coroutine_threadsafe(
+                            notify_clients({"type": "action", "text": learned_reply}), loop
+                        )
+                    else:
+                        # Fallback to Wikipedia Agent
+                        try:
+                            wiki_sender.send_string(json.dumps({"action": "summary", "query": content}))
+                            reply = wiki_sender.recv_string()
+                            save_to_db(db_sender, "assistant", reply)
+                            asyncio.run_coroutine_threadsafe(
+                                notify_clients({"type": "action", "text": reply}), loop
+                            )
+                        except Exception as e:
+                            err_msg = f"I am afraid I encountered an error searching my databases, sir: {e}"
+                            save_to_db(db_sender, "assistant", err_msg)
+                            asyncio.run_coroutine_threadsafe(
+                                notify_clients({"type": "action", "text": err_msg}), loop
+                            )
                 elif action == "sys":
                     # System Command routing
                     cmd = {"action": target}
