@@ -31,9 +31,9 @@ def scrape_duckduckgo(query):
         # Let's find result titles, URLs and snippets
         # DDG HTML search results have class="result__a", class="result__snippet" and class="result__url"
         
-        # Extract title link tags
-        title_matches = re.findall(r'<a class="result__a" href="([^"]+)"[^>]*>(.*?)</a>', raw_html, re.DOTALL)
-        snippet_matches = re.findall(r'<a class="result__snippet"[^>]*>(.*?)</a>', raw_html, re.DOTALL)
+        # Extract title link tags and snippets using attribute-order-independent regexes
+        title_matches = re.findall(r'<a\b[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>(.*?)</a>', raw_html, re.DOTALL)
+        snippet_matches = re.findall(r'<a\b[^>]*class="[^"]*result__snippet[^"]*"[^>]*>(.*?)</a>', raw_html, re.DOTALL)
         
         results = []
         for i in range(min(5, len(title_matches))):
